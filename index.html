@@ -7,7 +7,7 @@
     <style>
         body { font-family: Arial, sans-serif; background-color: #131722; color: #fff; margin: 20px; }
         .container { display: flex; flex-wrap: wrap; gap: 20px; }
-        .chart-box { flex: 2; min-width: 320px; height: 500px; }
+        .chart-box { flex: 2; min-width: 320px; height: 500px; position: relative; }
         .panel-box { flex: 1; min-width: 300px; background: #1c2030; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
         h1 { color: #f39c12; font-size: 1.8em; }
         h2 { color: #f39c12; margin-top: 0; }
@@ -26,39 +26,30 @@
         .profit { color: #26a69a; }
         .loss { color: #ef5350; }
     </style>
+    
+    <!-- NUOVO SCRIPT TRADINGVIEW ASINCRONO (Previene i blocchi) -->
+    <script type="module" src="https://tradingview-widget.com"></script>
 </head>
 <body>
 
 <h1>📈 Analisi Finanziaria & Simulatore Posizioni Oro</h1>
-<p>Prezzo dell'oro simulato tramite asset XAU/USDT sintetico per aggiornamenti costanti.</p>
+<p>Monitora i mercati con il grafico ufficiale ed esegui simulazioni di investimento in tempo reale.</p>
 
 <div class="container">
-    <!-- 1. GRAFICO TRADINGVIEW -->
+    <!-- 1. COMPONENTE GRAFICO AVANZATO -->
     <div class="chart-box">
-        <div class="tradingview-widget-container" style="height:100%;width:100%">
-            <div id="tradingview_gold" style="height:calc(100% - 32px);width:100%"></div>
-            <script type="text/javascript" src="https://tradingview.com"></script>
-            <script type="text/javascript">
-            new TradingView.widget({
-                "autoplay": true,
-                "width": "100%",
-                "height": "100%",
-                "symbol": "MCDEX:XAUUSD",
-                "interval": "1",
-                "timezone": "Europe/Rome",
-                "theme": "dark",
-                "style": "1",
-                "locale": "it",
-                "enable_publishing": false,
-                "hide_side_toolbar": false,
-                "allow_symbol_change": true,
-                "container_id": "tradingview_gold"
-            });
-            </script>
-        </div>
+        <tv-advanced-chart 
+            symbol="OANDA:XAUUSD" 
+            interval="5" 
+            timezone="Europe/Rome" 
+            theme="dark" 
+            style="1" 
+            locale="it" 
+            autosize="true">
+        </tv-advanced-chart>
     </div>
 
-    <!-- 2. NUOVO PANNELLO DI SIMULAZIONE REALTIME -->
+    <!-- 2. PANNELLO DI SIMULAZIONE REALTIME -->
     <div class="panel-box">
         <h2>Simulatore Spot</h2>
         <div class="ticker" id="goldPriceBox">Prezzo Oro: Caricamento...</div>
@@ -85,27 +76,24 @@
 </div>
 
 <script>
-// LOGICA DI MERCATO IN TEMPO REALE
 let currentGoldPrice = 0;
 let posizioneAttiva = null;
 
-// Recupera il prezzo dell'oro in streaming (aggiornato ogni 2 secondi)
+// Recupera il prezzo spot istantaneo dell'oro via API
 async function fetchGoldPrice() {
     try {
-        // Usiamo l'indice XAUUSDT di Bybit/Binance per avere aggiornamenti costanti via API pubblica
         const response = await fetch('https://bybit.com');
         const data = await response.json();
         if(data.result && data.result.list && data.result.list[0]) {
             currentGoldPrice = parseFloat(data.result.list[0].lastPrice);
             document.getElementById('goldPriceBox').innerText = `Prezzo Oro: $${currentGoldPrice.toFixed(2)} / oz`;
             
-            // Se c'è una posizione aperta, aggiorna le metriche live
             if (posizioneAttiva) {
                 aggiornaMetrichePosizione();
             }
         }
     } catch (error) {
-        console.error("Errore nel recupero del prezzo:", error);
+        console.error("Errore nel recupero del prezzo API:", error);
     }
 }
 
@@ -116,19 +104,16 @@ function apriPosizione(direzione) {
         return;
     }
     if (currentGoldPrice === 0) {
-        alert("Attendi che il prezzo dell'oro sia caricato.");
+        alert("Attendi il caricamento del prezzo live.");
         return;
     }
 
-    // Crea l'oggetto della posizione
     posizioneAttiva = {
         tipo: direzione,
         prezzoIngresso: currentGoldPrice,
-        capitaleIniziale: capitale,
-        onceAcquistate: capitale / currentGoldPrice
+        capitaleIniziale: capitale
     };
 
-    // Interfaccia Grafica
     document.getElementById('setupOrder').style.display = 'none';
     const card = document.getElementById('activePosition');
     card.style.display = 'block';
@@ -153,7 +138,6 @@ function aggiornaMetrichePosizione() {
     const pnlDenaro = posizioneAttiva.capitaleIniziale * pnlPercentuale;
     const valoreAttuale = posizioneAttiva.capitaleIniziale + pnlDenaro;
 
-    // Rendering a schermo
     const pnlBox = document.getElementById('posPnL');
     const valBox = document.getElementById('posCurrentValue');
 
@@ -177,7 +161,7 @@ function chiudiPosizione() {
     document.getElementById('setupOrder').style.display = 'block';
 }
 
-// Avvia il loop di aggiornamento prezzo ogni 2 secondi
+// Avvio dei loop indipendenti
 setInterval(fetchGoldPrice, 2000);
 fetchGoldPrice();
 </script>
