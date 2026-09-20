@@ -2,12 +2,14 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simulatore Trading Oro (XAU/USD)</title>
     <style>
         body { font-family: Arial, sans-serif; background-color: #131722; color: #fff; margin: 20px; }
         .container { display: flex; flex-wrap: wrap; gap: 20px; }
-        .chart-box { flex: 2; min-width: 600px; height: 500px; }
+        .chart-box { flex: 2; min-width: 320px; height: 500px; }
         .panel-box { flex: 1; min-width: 300px; background: #1c2030; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        h1 { color: #f39c12; font-size: 1.8em; }
         h2 { color: #f39c12; margin-top: 0; }
         label { display: block; margin: 10px 0 5px; color: #b2b5be; }
         input, select, button { width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 4px; border: 1px solid #363c4e; background: #2a2e39; color: #fff; box-sizing: border-box; }
@@ -24,17 +26,19 @@
 <p>Monitora le quotazioni in tempo reale e simula l'impatto finanziario delle tue posizioni sull'oro (XAU/USD).</p>
 
 <div class="container">
-    <!-- 1. GRAFICO TRADINGVIEW -->
+    <!-- 1. NUOVO GRAFICO TRADINGVIEW COMPATIBILE -->
     <div class="chart-box">
         <div class="tradingview-widget-container" style="height:100%;width:100%">
-            <div id="tradingview_gold"></div>
-            <script type="text/javascript" src="https://tradingview.com"></script>
+            <div id="tradingview_gold" style="height:calc(100% - 32px);width:100%"></div>
+            <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
             <script type="text/javascript">
             new TradingView.widget({
-                "autosize": true,
-                "symbol": "FX_IDC:XAUUSD",
+                "autoplay": true,
+                "width": "100%",
+                "height": "100%",
+                "symbol": "OANDA:XAUUSD",
                 "interval": "D",
-                "timezone": "Etc/UTC",
+                "timezone": "Europe/Rome",
                 "theme": "dark",
                 "style": "1",
                 "locale": "it",
@@ -53,15 +57,15 @@
         
         <label for="direction">Direzione del Trade</label>
         <select id="direction">
-            <option value="LONG">⚠️ ACQUISTO (Long) - Scommetti sul rialzo</option>
-            <option value="SHORT">📉 VENDITA (Short) - Scommetti sul ribasso</option>
+            <option value="LONG">🟢 ACQUISTO (Long) - Rialzo</option>
+            <option value="SHORT">🔴 VENDITA (Short) - Ribasso</option>
         </select>
 
         <label for="entryPrice">Prezzo di Ingresso (USD per Oncia)</label>
-        <input type="number" id="entryPrice" placeholder="Es. 2500" step="0.01" required>
+        <input type="number" id="entryPrice" placeholder="Es. 2650" step="0.01" required>
 
         <label for="exitPrice">Prezzo di Uscita/Attuale (USD per Oncia)</label>
-        <input type="number" id="exitPrice" placeholder="Es. 2550" step="0.01" required>
+        <input type="number" id="exitPrice" placeholder="Es. 2700" step="0.01" required>
 
         <label for="ounces">Quantità (Once d'oro)</label>
         <input type="number" id="ounces" placeholder="Es. 10" step="0.1" required>
@@ -99,7 +103,7 @@ function calcolaSimulazione() {
         resultBox.innerHTML = `✅ Profitto Stimato: +$${pnl.toFixed(2)}`;
     } else {
         resultBox.className = "result loss";
-        resultBox.innerHTML = `🚨 Perdita Stimata: $${pnl.toFixed(2)}`;
+        resultBox.innerHTML = `🚨 Perdita Stimata: -$${Math.abs(pnl).toFixed(2)}`;
     }
 }
 </script>
