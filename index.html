@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulatore Trading Oro (XAU/USD)</title>
+    <title>Trading Spot Oro - Simulatore Realtime</title>
     <style>
         body { font-family: Arial, sans-serif; background-color: #131722; color: #fff; margin: 20px; }
         .container { display: flex; flex-wrap: wrap; gap: 20px; }
@@ -11,32 +11,39 @@
         .panel-box { flex: 1; min-width: 300px; background: #1c2030; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
         h1 { color: #f39c12; font-size: 1.8em; }
         h2 { color: #f39c12; margin-top: 0; }
+        .ticker { font-size: 1.3em; font-weight: bold; color: #f1c40f; margin-bottom: 15px; background: #2a2e39; padding: 10px; border-radius: 4px; text-align: center; }
         label { display: block; margin: 10px 0 5px; color: #b2b5be; }
-        input, select, button { width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 4px; border: 1px solid #363c4e; background: #2a2e39; color: #fff; box-sizing: border-box; }
-        button { background: #f39c12; color: #131722; font-weight: bold; cursor: pointer; border: none; transition: 0.2s; }
-        button:hover { background: #e67e22; }
-        .result { padding: 15px; border-radius: 4px; margin-top: 15px; font-size: 1.1em; font-weight: bold; text-align: center; display: none; }
-        .profit { background: #26a69a; color: white; }
-        .loss { background: #ef5350; color: white; }
+        input, button { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 4px; border: 1px solid #363c4e; background: #2a2e39; color: #fff; box-sizing: border-box; font-size: 1em; }
+        .btn-container { display: flex; gap: 10px; }
+        .btn-long { background: #26a69a; color: white; font-weight: bold; cursor: pointer; border: none; }
+        .btn-long:hover { background: #2bbbad; }
+        .btn-short { background: #ef5350; color: white; font-weight: bold; cursor: pointer; border: none; }
+        .btn-short:hover { background: #f44336; }
+        .btn-close { background: #78909c; color: white; font-weight: bold; cursor: pointer; border: none; }
+        .btn-close:hover { background: #90a4ae; }
+        .position-card { background: #2a2e39; padding: 15px; border-radius: 6px; margin-top: 15px; border-left: 5px solid #78909c; }
+        .pos-active { font-weight: bold; font-size: 1.1em; }
+        .profit { color: #26a69a; }
+        .loss { color: #ef5350; }
     </style>
 </head>
 <body>
 
 <h1>📈 Analisi Finanziaria & Simulatore Posizioni Oro</h1>
-<p>Monitora le quotazioni in tempo reale e simula l'impatto finanziario delle tue posizioni sull'oro (XAU/USD).</p>
+<p>Prezzo dell'oro simulato tramite asset XAU/USDT sintetico per aggiornamenti costanti.</p>
 
 <div class="container">
-    <!-- 1. NUOVO GRAFICO TRADINGVIEW COMPATIBILE -->
+    <!-- 1. GRAFICO TRADINGVIEW -->
     <div class="chart-box">
         <div class="tradingview-widget-container" style="height:100%;width:100%">
             <div id="tradingview_gold" style="height:calc(100% - 32px);width:100%"></div>
-            <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+            <script type="text/javascript" src="https://tradingview.com"></script>
             <script type="text/javascript">
             new TradingView.widget({
                 "autoplay": true,
                 "width": "100%",
                 "height": "100%",
-                "symbol": "OANDA:XAUUSD",
+                "symbol": "MCDEX:XAUUSD",
                 "interval": "1",
                 "timezone": "Europe/Rome",
                 "theme": "dark",
@@ -51,61 +58,128 @@
         </div>
     </div>
 
-    <!-- 2. PANNELLO DI SIMULAZIONE -->
+    <!-- 2. NUOVO PANNELLO DI SIMULAZIONE REALTIME -->
     <div class="panel-box">
-        <h2>Simula Posizione</h2>
+        <h2>Simulatore Spot</h2>
+        <div class="ticker" id="goldPriceBox">Prezzo Oro: Caricamento...</div>
         
-        <label for="direction">Direzione del Trade</label>
-        <select id="direction">
-            <option value="LONG">🟢 ACQUISTO (Long) - Rialzo</option>
-            <option value="SHORT">🔴 VENDITA (Short) - Ribasso</option>
-        </select>
+        <div id="setupOrder">
+            <label for="investAmount">Capitale da Investire (\$ USD)</label>
+            <input type="number" id="investAmount" placeholder="Es. 1000" min="1" step="10">
 
-        <label for="entryPrice">Prezzo di Ingresso (USD per Oncia)</label>
-        <input type="number" id="entryPrice" placeholder="Es. 2650" step="0.01" required>
+            <div class="btn-container">
+                <button class="btn-long" onclick="apriPosizione('LONG')">🟢 COMPRA (Long)</button>
+                <button class="btn-short" onclick="apriPosizione('SHORT')">🔴 VENDI (Short)</button>
+            </div>
+        </div>
 
-        <label for="exitPrice">Prezzo di Uscita/Attuale (USD per Oncia)</label>
-        <input type="number" id="exitPrice" placeholder="Es. 2700" step="0.01" required>
-
-        <label for="ounces">Quantità (Once d'oro)</label>
-        <input type="number" id="ounces" placeholder="Es. 10" step="0.1" required>
-
-        <button onclick="calcolaSimulazione()">Calcola P&L Virtuale</button>
-
-        <div id="resultBox" class="result"></div>
+        <div id="activePosition" class="position-card" style="display: none;">
+            <p class="pos-active" id="posType">Tipo: -</p>
+            <p>Prezzo Ingresso: <span id="posEntry">-</span> USD</p>
+            <p>Capitale Investito: \$<span id="posCapital">-</span></p>
+            <p>Valore Attuale Posizione: <span id="posCurrentValue" style="font-weight: bold;">-</span></p>
+            <p>Profitto/Perdita (P&L): <span id="posPnL" style="font-weight: bold;">-</span></p>
+            <button class="btn-close" onclick="chiudiPosizione()">❌ Chiudi Posizione</button>
+        </div>
     </div>
 </div>
 
-<!-- 3. LOGICA DI CALCOLO JS -->
 <script>
-function calcolaSimulazione() {
-    const direction = document.getElementById('direction').value;
-    const entry = parseFloat(document.getElementById('entryPrice').value);
-    const exit = parseFloat(document.getElementById('exitPrice').value);
-    const ounces = parseFloat(document.getElementById('ounces').value);
-    const resultBox = document.getElementById('resultBox');
+// LOGICA DI MERCATO IN TEMPO REALE
+let currentGoldPrice = 0;
+let posizioneAttiva = null;
 
-    if (isNaN(entry) || isNaN(exit) || isNaN(ounces) || ounces <= 0) {
-        alert("Per favore, inserisci valori numerici validi.");
+// Recupera il prezzo dell'oro in streaming (aggiornato ogni 2 secondi)
+async function fetchGoldPrice() {
+    try {
+        // Usiamo l'indice XAUUSDT di Bybit/Binance per avere aggiornamenti costanti via API pubblica
+        const response = await fetch('https://bybit.com');
+        const data = await response.json();
+        if(data.result && data.result.list && data.result.list[0]) {
+            currentGoldPrice = parseFloat(data.result.list[0].lastPrice);
+            document.getElementById('goldPriceBox').innerText = `Prezzo Oro: $${currentGoldPrice.toFixed(2)} / oz`;
+            
+            // Se c'è una posizione aperta, aggiorna le metriche live
+            if (posizioneAttiva) {
+                aggiornaMetrichePosizione();
+            }
+        }
+    } catch (error) {
+        console.error("Errore nel recupero del prezzo:", error);
+    }
+}
+
+function apriPosizione(direzione) {
+    const capitale = parseFloat(document.getElementById('investAmount').value);
+    if (isNaN(capitale) || capitale <= 0) {
+        alert("Inserisci un importo valido da investire.");
+        return;
+    }
+    if (currentGoldPrice === 0) {
+        alert("Attendi che il prezzo dell'oro sia caricato.");
         return;
     }
 
-    let pnl = 0;
-    if (direction === "LONG") {
-        pnl = (exit - entry) * ounces;
+    // Crea l'oggetto della posizione
+    posizioneAttiva = {
+        tipo: direzione,
+        prezzoIngresso: currentGoldPrice,
+        capitaleIniziale: capitale,
+        onceAcquistate: capitale / currentGoldPrice
+    };
+
+    // Interfaccia Grafica
+    document.getElementById('setupOrder').style.display = 'none';
+    const card = document.getElementById('activePosition');
+    card.style.display = 'block';
+    card.style.borderLeft = direzione === 'LONG' ? '5px solid #26a69a' : '5px solid #ef5350';
+    document.getElementById('posType').innerText = direzione === 'LONG' ? '🟢 POSIZIONE LONG ATTIVA' : '🔴 POSIZIONE SHORT ATTIVA';
+    document.getElementById('posEntry').innerText = posizioneAttiva.prezzoIngresso.toFixed(2);
+    document.getElementById('posCapital').innerText = posizioneAttiva.capitaleIniziale.toFixed(2);
+    
+    aggiornaMetrichePosizione();
+}
+
+function aggiornaMetrichePosizione() {
+    if (!posizioneAttiva) return;
+
+    let pnlPercentuale = 0;
+    if (posizioneAttiva.tipo === 'LONG') {
+        pnlPercentuale = (currentGoldPrice - posizioneAttiva.prezzoIngresso) / posizioneAttiva.prezzoIngresso;
     } else {
-        pnl = (entry - exit) * ounces;
+        pnlPercentuale = (posizioneAttiva.prezzoIngresso - currentGoldPrice) / posizioneAttiva.prezzoIngresso;
     }
 
-    resultBox.style.display = "block";
-    if (pnl >= 0) {
-        resultBox.className = "result profit";
-        resultBox.innerHTML = `✅ Profitto Stimato: +$${pnl.toFixed(2)}`;
+    const pnlDenaro = posizioneAttiva.capitaleIniziale * pnlPercentuale;
+    const valoreAttuale = posizioneAttiva.capitaleIniziale + pnlDenaro;
+
+    // Rendering a schermo
+    const pnlBox = document.getElementById('posPnL');
+    const valBox = document.getElementById('posCurrentValue');
+
+    valBox.innerText = `$${valoreAttuale.toFixed(2)}`;
+    
+    if (pnlDenaro >= 0) {
+        pnlBox.className = 'profit';
+        pnlBox.innerText = `+$${pnlDenaro.toFixed(2)} (+${(pnlPercentuale * 100).toFixed(2)}%)`;
+        valBox.className = 'profit';
     } else {
-        resultBox.className = "result loss";
-        resultBox.innerHTML = `🚨 Perdita Stimata: -$${Math.abs(pnl).toFixed(2)}`;
+        pnlBox.className = 'loss';
+        pnlBox.innerText = `-$${Math.abs(pnlDenaro).toFixed(2)} (${(pnlPercentuale * 100).toFixed(2)}%)`;
+        valBox.className = 'loss';
     }
 }
+
+function chiudiPosizione() {
+    alert(`Posizione chiusa! Risultato finale: ${document.getElementById('posPnL').innerText}`);
+    posizioneAttiva = null;
+    document.getElementById('activePosition').style.display = 'none';
+    document.getElementById('setupOrder').style.display = 'block';
+}
+
+// Avvia il loop di aggiornamento prezzo ogni 2 secondi
+setInterval(fetchGoldPrice, 2000);
+fetchGoldPrice();
 </script>
 
 </body>
