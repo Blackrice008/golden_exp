@@ -3,12 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trading Spot Oro - Simulatore Realtime</title>
+    <title>Simulatore & Grafico Oro Realtime</title>
+    <!-- Carica Chart.js in modo sicuro e approvato da GitHub Pages -->
+    <script src="https://jsdelivr.net"></script>
     <style>
         body { font-family: Arial, sans-serif; background-color: #131722; color: #fff; margin: 20px; }
         .container { display: flex; flex-wrap: wrap; gap: 20px; }
-        .chart-box { flex: 2; min-width: 320px; height: 500px; }
-        .panel-box { flex: 1; min-width: 300px; background: #1c2030; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .chart-box { flex: 2; min-width: 320px; height: 450px; background: #1c2030; padding: 15px; border-radius: 8px; box-sizing: border-box; }
+        .panel-box { flex: 1; min-width: 300px; background: #1c2030; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); box-sizing: border-box; }
         h1 { color: #f39c12; font-size: 1.8em; }
         h2 { color: #f39c12; margin-top: 0; }
         .ticker { font-size: 1.3em; font-weight: bold; color: #f1c40f; margin-bottom: 15px; background: #2a2e39; padding: 10px; border-radius: 4px; text-align: center; }
@@ -25,18 +27,17 @@
         .pos-active { font-weight: bold; font-size: 1.1em; }
         .profit { color: #26a69a; }
         .loss { color: #ef5350; }
-        iframe { border: none; border-radius: 4px; width: 100%; height: 100%; }
     </style>
 </head>
 <body>
 
 <h1>📈 Analisi Finanziaria & Simulatore Posizioni Oro</h1>
-<p>Monitora i mercati con il widget integrato ed esegui simulazioni di investimento in tempo reale.</p>
+<p>Grafico indipendente e simulatore integrato con aggiornamenti realtime tramite flussi di rete pubblici.</p>
 
 <div class="container">
-    <!-- 1. GRAFICO INTEGRATO CON IFRAME DI TRADINGVIEW -->
+    <!-- 1. IL NOSTRO GRAFICO INDIPENDENTE -->
     <div class="chart-box">
-        <iframe src="https://tradingview.com"></iframe>
+        <canvas id="goldChart" style="width:100%; height:100%;"></canvas>
     </div>
 
     <!-- 2. PANNELLO DI SIMULAZIONE REALTIME -->
@@ -69,6 +70,55 @@
 let currentGoldPrice = 0;
 let posizioneAttiva = null;
 
+// Configurazione Iniziale di Chart.js
+const ctx = document.getElementById('goldChart').getContext('2d');
+const maxDataPoints = 30; // Numero massimo di tick da mostrare a schermo
+const priceHistory = [];
+const timeLabels = [];
+
+const goldChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: timeLabels,
+        datasets: [{
+            label: 'Prezzo Spot Oro (USD/oz)',
+            data: priceHistory,
+            borderColor: '#f39c12',
+            backgroundColor: 'rgba(243, 156, 18, 0.1)',
+            borderWidth: 2,
+            pointRadius: 1,
+            fill: true,
+            tension: 0.3
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            x: { grid: { color: '#2a2e39' }, ticks: { color: '#b2b5be', maxTicksLimit: 6 } },
+            y: { grid: { color: '#2a2e39' }, ticks: { color: '#b2b5be' } }
+        },
+        plugins: {
+            legend: { display: false }
+        }
+    }
+});
+
+// Funzione per aggiornare il grafico con i nuovi prezzi
+function aggiornaGrafico(nuovoPrezzo) {
+    const adesso = new Date();
+    const stringaOra = adesso.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    
+    if (priceHistory.length >= maxDataPoints) {
+        priceHistory.shift();
+        timeLabels.shift();
+    }
+    
+    priceHistory.push(nuovoPrezzo);
+    timeLabels.push(stringaOra);
+    goldChart.update();
+}
+
 // Recupera il prezzo spot istantaneo dell'oro via API pubblica di Bybit
 async function fetchGoldPrice() {
     try {
@@ -77,6 +127,9 @@ async function fetchGoldPrice() {
         if(data.result && data.result.list && data.result.list[0]) {
             currentGoldPrice = parseFloat(data.result.list[0].lastPrice);
             document.getElementById('goldPriceBox').innerText = `Prezzo Oro: $${currentGoldPrice.toFixed(2)} / oz`;
+            
+            // Aggiorna il grafico fatto in casa
+            aggiornaGrafico(currentGoldPrice);
             
             if (posizioneAttiva) {
                 aggiornaMetrichePosizione();
@@ -151,8 +204,8 @@ function chiudiPosizione() {
     document.getElementById('setupOrder').style.display = 'block';
 }
 
-// Avvio dei loop indipendenti
-setInterval(fetchGoldPrice, 2000);
+// Avvio dei loop (interroga l'oracolo ogni 3 secondi)
+setInterval(fetchGoldPrice, 3000);
 fetchGoldPrice();
 </script>
 
