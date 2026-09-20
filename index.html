@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Simulatore Trading Oro (XAU/USD)</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #131722; color: #fff; margin: 20px; }
+        .container { display: flex; flex-wrap: wrap; gap: 20px; }
+        .chart-box { flex: 2; min-width: 600px; height: 500px; }
+        .panel-box { flex: 1; min-width: 300px; background: #1c2030; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        h2 { color: #f39c12; margin-top: 0; }
+        label { display: block; margin: 10px 0 5px; color: #b2b5be; }
+        input, select, button { width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 4px; border: 1px solid #363c4e; background: #2a2e39; color: #fff; box-sizing: border-box; }
+        button { background: #f39c12; color: #131722; font-weight: bold; cursor: pointer; border: none; transition: 0.2s; }
+        button:hover { background: #e67e22; }
+        .result { padding: 15px; border-radius: 4px; margin-top: 15px; font-size: 1.1em; font-weight: bold; text-align: center; display: none; }
+        .profit { background: #26a69a; color: white; }
+        .loss { background: #ef5350; color: white; }
+    </style>
+</head>
+<body>
+
+<h1>📈 Analisi Finanziaria & Simulatore Posizioni Oro</h1>
+<p>Monitora le quotazioni in tempo reale e simula l'impatto finanziario delle tue posizioni sull'oro (XAU/USD).</p>
+
+<div class="container">
+    <!-- 1. GRAFICO TRADINGVIEW -->
+    <div class="chart-box">
+        <div class="tradingview-widget-container" style="height:100%;width:100%">
+            <div id="tradingview_gold"></div>
+            <script type="text/javascript" src="https://tradingview.com"></script>
+            <script type="text/javascript">
+            new TradingView.widget({
+                "autosize": true,
+                "symbol": "FX_IDC:XAUUSD",
+                "interval": "D",
+                "timezone": "Etc/UTC",
+                "theme": "dark",
+                "style": "1",
+                "locale": "it",
+                "enable_publishing": false,
+                "hide_side_toolbar": false,
+                "allow_symbol_change": true,
+                "container_id": "tradingview_gold"
+            });
+            </script>
+        </div>
+    </div>
+
+    <!-- 2. PANNELLO DI SIMULAZIONE -->
+    <div class="panel-box">
+        <h2>Simula Posizione</h2>
+        
+        <label for="direction">Direzione del Trade</label>
+        <select id="direction">
+            <option value="LONG">⚠️ ACQUISTO (Long) - Scommetti sul rialzo</option>
+            <option value="SHORT">📉 VENDITA (Short) - Scommetti sul ribasso</option>
+        </select>
+
+        <label for="entryPrice">Prezzo di Ingresso (USD per Oncia)</label>
+        <input type="number" id="entryPrice" placeholder="Es. 2500" step="0.01" required>
+
+        <label for="exitPrice">Prezzo di Uscita/Attuale (USD per Oncia)</label>
+        <input type="number" id="exitPrice" placeholder="Es. 2550" step="0.01" required>
+
+        <label for="ounces">Quantità (Once d'oro)</label>
+        <input type="number" id="ounces" placeholder="Es. 10" step="0.1" required>
+
+        <button onclick="calcolaSimulazione()">Calcola P&L Virtuale</button>
+
+        <div id="resultBox" class="result"></div>
+    </div>
+</div>
+
+<!-- 3. LOGICA DI CALCOLO JS -->
+<script>
+function calcolaSimulazione() {
+    const direction = document.getElementById('direction').value;
+    const entry = parseFloat(document.getElementById('entryPrice').value);
+    const exit = parseFloat(document.getElementById('exitPrice').value);
+    const ounces = parseFloat(document.getElementById('ounces').value);
+    const resultBox = document.getElementById('resultBox');
+
+    if (isNaN(entry) || isNaN(exit) || isNaN(ounces) || ounces <= 0) {
+        alert("Per favore, inserisci valori numerici validi.");
+        return;
+    }
+
+    let pnl = 0;
+    if (direction === "LONG") {
+        pnl = (exit - entry) * ounces;
+    } else {
+        pnl = (entry - exit) * ounces;
+    }
+
+    resultBox.style.display = "block";
+    if (pnl >= 0) {
+        resultBox.className = "result profit";
+        resultBox.innerHTML = `✅ Profitto Stimato: +$${pnl.toFixed(2)}`;
+    } else {
+        resultBox.className = "result loss";
+        resultBox.innerHTML = `🚨 Perdita Stimata: $${pnl.toFixed(2)}`;
+    }
+}
+</script>
+
+</body>
+</html>
