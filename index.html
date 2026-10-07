@@ -8,9 +8,9 @@
         body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #0c0d14; color: #fff; margin: 20px; }
         .container { display: flex; flex-wrap: wrap; gap: 20px; max-width: 1400px; margin: 0 auto; }
         
-        /* ALTEZZA BLOCCATA IN PIXEL PER EVITARE IL COLLASSO A ZERO */
-        .chart-box { flex: 2; min-width: 350px; height: 500px; background: #131722; border-radius: 8px; border: 1px solid #2a2e39; }
-        .panel-box { flex: 1; min-width: 300px; background: #131722; padding: 25px; border-radius: 8px; border: 1px solid #2a2e39; box-sizing: border-box; }
+        /* Box grafico stabile con bordi visibili per controllo */
+        .chart-box { flex: 2; min-width: 350px; height: 500px; background: #131722; border-radius: 8px; border: 1px solid #363c4e; overflow: hidden; }
+        .panel-box { flex: 1; min-width: 300px; background: #131722; padding: 25px; border-radius: 8px; border: 1px solid #363c4e; box-sizing: border-box; }
         
         h1 { color: #f39c12; font-size: 1.8em; margin-bottom: 20px; }
         h2 { color: #f39c12; margin-top: 0; font-size: 1.4em; }
@@ -29,6 +29,9 @@
         .profit { color: #26a69a; font-weight: bold; }
         .loss { color: #ef5350; font-weight: bold; }
         .info-text { font-size: 0.85em; color: #787b86; margin-top: -10px; margin-bottom: 15px; }
+        
+        /* Stile IFrame per riempire il box */
+        iframe { width: 100%; height: 100%; border: none; display: block; }
     </style>
 </head>
 <body>
@@ -36,28 +39,9 @@
 <h1>📈 Quotazione Oro Spot (XAU/USD) & Simulatore Posizioni</h1>
 
 <div class="container">
-    <!-- 1. GRAFICO CON ALTEZZA INTERNA COSTRRETTA IN PIXEL -->
+    <!-- 1. GRAFICO CON IFRAME STANDARD SICURO DI TRADINGVIEW -->
     <div class="chart-box">
-        <div class="tradingview-widget-container" style="height:100%; width:100%;">
-            <div class="tradingview-widget-container__widget" style="height:100%; width:100%;"></div>
-            <script type="text/javascript" src="https://tradingview.com" async>
-            {
-                "width": "100%",
-                "height": "100%",
-                "symbol": "TVC:GOLD",
-                "interval": "5",
-                "timezone": "Europe/Rome",
-                "theme": "dark",
-                "style": "1",
-                "locale": "it",
-                "enable_publishing": false,
-                "hide_side_toolbar": false,
-                "allow_symbol_change": true,
-                "calendar": false,
-                "support_host": "https://tradingview.com"
-            }
-            </script>
-        </div>
+        <iframe src="https://tradingview.com"></iframe>
     </div>
 
     <!-- 2. PANNELLO SIMULATORE -->
