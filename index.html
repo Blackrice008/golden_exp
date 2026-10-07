@@ -7,8 +7,11 @@
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #0c0d14; color: #fff; margin: 20px; }
         .container { display: flex; flex-wrap: wrap; gap: 20px; max-width: 1400px; margin: 0 auto; }
-        .chart-box { flex: 2; min-width: 350px; height: 550px; background: #131722; border-radius: 8px; overflow: hidden; border: 1px solid #2a2e39; }
+        
+        /* ALTEZZA BLOCCATA IN PIXEL PER EVITARE IL COLLASSO A ZERO */
+        .chart-box { flex: 2; min-width: 350px; height: 500px; background: #131722; border-radius: 8px; border: 1px solid #2a2e39; }
         .panel-box { flex: 1; min-width: 300px; background: #131722; padding: 25px; border-radius: 8px; border: 1px solid #2a2e39; box-sizing: border-box; }
+        
         h1 { color: #f39c12; font-size: 1.8em; margin-bottom: 20px; }
         h2 { color: #f39c12; margin-top: 0; font-size: 1.4em; }
         label { display: block; margin: 15px 0 5px; color: #b2b5be; }
@@ -33,13 +36,14 @@
 <h1>📈 Quotazione Oro Spot (XAU/USD) & Simulatore Posizioni</h1>
 
 <div class="container">
-    <!-- 1. GRAFICO AVANZATO TRADINGVIEW (100% GARANTITO DA TRADINGVIEW) -->
+    <!-- 1. GRAFICO CON ALTEZZA INTERNA COSTRRETTA IN PIXEL -->
     <div class="chart-box">
-        <div class="tradingview-widget-container" style="height:100%;width:100%">
-            <div class="tradingview-widget-container__widget" style="height:calc(100% - 32px);width:100%"></div>
+        <div class="tradingview-widget-container" style="height:100%; width:100%;">
+            <div class="tradingview-widget-container__widget" style="height:100%; width:100%;"></div>
             <script type="text/javascript" src="https://tradingview.com" async>
             {
-                "autosize": true,
+                "width": "100%",
+                "height": "100%",
                 "symbol": "TVC:GOLD",
                 "interval": "5",
                 "timezone": "Europe/Rome",
@@ -56,10 +60,10 @@
         </div>
     </div>
 
-    <!-- 2. PANNELLO SIMULATORE DI TRADING -->
+    <!-- 2. PANNELLO SIMULATORE -->
     <div class="panel-box">
         <h2>Simulatore Posizione</h2>
-        <p class="info-text">Inserisci i dati manualmente guardando il prezzo attuale sul grafico a sinistra.</p>
+        <p class="info-text">Guarda il prezzo attuale sul grafico a sinistra e inserisci i dati per simulare.</p>
         
         <div id="setupOrder">
             <label for="entryPrice">Prezzo di Ingresso (USD)</label>
@@ -74,18 +78,17 @@
             </div>
         </div>
 
-        <!-- SCHEDA POSIZIONE APERTA -->
         <div id="activePosition" class="position-card">
             <p class="pos-active" id="posType">TIPO POSIZIONE</p>
             <p>Prezzo Ingresso: <span id="posEntry">-</span> USD</p>
             <p>Capitale Investito: \$<span id="posCapital">-</span></p>
             
-            <label for="currentPriceInput" style="color: #f1c40f; font-weight: bold;">Inserisci Prezzo Corrente (per aggiornare):</label>
-            <input type="number" id="currentPriceInput" placeholder="Guarda il grafico e inserisci il prezzo" step="0.01" oninput="aggiornaLive()">
+            <label for="currentPriceInput" style="color: #f1c40f; font-weight: bold;">Prezzo Corrente del Mercato:</label>
+            <input type="number" id="currentPriceInput" placeholder="Inserisci il prezzo che vedi sul grafico" step="0.01" oninput="aggiornaLive()">
 
             <p>Valore Attuale: <span id="posCurrentValue">-</span></p>
             <p>Profitto/Perdita (P&L): <span id="posPnL">-</span></p>
-            <button class="btn-close" onclick="chiudiPosizione()">❌ Chiudi Posizione Virtuale</button>
+            <button class="btn-close" onclick="chiudiPosizione()">❌ Chiudi Posizione</button>
         </div>
     </div>
 </div>
@@ -98,63 +101,49 @@ function apriPosizione(direzione) {
     const capitale = parseFloat(document.getElementById('investAmount').value);
 
     if (isNaN(entry) || entry <= 0 || isNaN(capitale) || capitale <= 0) {
-        alert("Inserisci un prezzo d'ingresso e un capitale validi.");
+        alert("Inserisci valori validi.");
         return;
     }
 
-    posizioneAttiva = {
-        tipo: direzione,
-        prezzoIngresso: entry,
-        capitaleIniziale: capitale
-    };
+    posizioneAttiva = { tipo: direzione, prezzoIngresso: entry, capitaleIniziale: capitale };
 
-    // Cambio interfaccia
     document.getElementById('setupOrder').style.display = 'none';
     const card = document.getElementById('activePosition');
     card.style.display = 'block';
     card.style.borderLeft = direzione === 'LONG' ? '5px solid #26a69a' : '5px solid #ef5350';
     
-    document.getElementById('posType').innerText = direzione === 'LONG' ? '🟢 POSIZIONE LONG (RIALZO) APERTA' : '🔴 POSIZIONE SHORT (RIBASSO) APERTA';
-    document.getElementById('posType').className = direzione === 'LONG' ? 'pos-active profit' : 'pos-active loss';
+    document.getElementById('posType').innerText = direzione === 'LONG' ? '🟢 POSIZIONE LONG APERTA' : '🔴 POSIZIONE SHORT APERTA';
     document.getElementById('posEntry').innerText = entry.toFixed(2);
     document.getElementById('posCapital').innerText = capitale.toFixed(2);
-    document.getElementById('currentPriceInput').value = entry; // imposta il prezzo corrente iniziale uguale all'ingresso
+    document.getElementById('currentPriceInput').value = entry;
     
     aggiornaLive();
 }
 
 function aggiornaLive() {
     if (!posizioneAttiva) return;
-
     const livePrice = parseFloat(document.getElementById('currentPriceInput').value);
     if (isNaN(livePrice) || livePrice <= 0) return;
 
-    let pnlPercentuale = 0;
-    if (posizioneAttiva.tipo === 'LONG') {
-        pnlPercentuale = (livePrice - posizioneAttiva.prezzoIngresso) / posizioneAttiva.prezzoIngresso;
-    } else {
-        pnlPercentuale = (posizioneAttiva.prezzoIngresso - livePrice) / posizioneAttiva.prezzoIngresso;
-    }
+    let pnlPercentuale = posizioneAttiva.tipo === 'LONG' ? 
+        (livePrice - posizioneAttiva.prezzoIngresso) / posizioneAttiva.prezzoIngresso : 
+        (posizioneAttiva.prezzoIngresso - livePrice) / posizioneAttiva.prezzoIngresso;
 
     const pnlDenaro = posizioneAttiva.capitaleIniziale * pnlPercentuale;
     const valoreAttuale = posizioneAttiva.capitaleIniziale + pnlDenaro;
 
+    document.getElementById('posCurrentValue').innerText = `$${valoreAttuale.toFixed(2)}`;
     const pnlBox = document.getElementById('posPnL');
-    const valBox = document.getElementById('posCurrentValue');
-
-    valBox.innerText = `$${valoreAttuale.toFixed(2)}`;
     
     if (pnlDenaro >= 0) {
-        pnlBox.className = 'profit';
-        pnlBox.innerText = `+$${pnlDenaro.toFixed(2)} (+${(pnlPercentuale * 100).toFixed(2)}%)`;
+        pnlBox.className = 'profit'; pnlBox.innerText = `+$${pnlDenaro.toFixed(2)} (+${(pnlPercentuale * 100).toFixed(2)}%)`;
     } else {
-        pnlBox.className = 'loss';
-        pnlBox.innerText = `-$${Math.abs(pnlDenaro).toFixed(2)} (${(pnlPercentuale * 100).toFixed(2)}%)`;
+        pnlBox.className = 'loss'; pnlBox.innerText = `-$${Math.abs(pnlDenaro).toFixed(2)} (${(pnlPercentuale * 100).toFixed(2)}%)`;
     }
 }
 
 function chiudiPosizione() {
-    alert(`Posizione simulata chiusa! Risultato finale: ${document.getElementById('posPnL').innerText}`);
+    alert(`Posizione chiusa! Risultato finale: ${document.getElementById('posPnL').innerText}`);
     posizioneAttiva = null;
     document.getElementById('activePosition').style.display = 'none';
     document.getElementById('setupOrder').style.display = 'block';
